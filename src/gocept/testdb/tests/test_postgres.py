@@ -2,6 +2,7 @@ import gocept.testdb
 import gocept.testdb.testing
 import gocept.testing.assertion
 import os
+import sqlalchemy
 import sqlalchemy.exc
 import time
 
@@ -68,7 +69,7 @@ class PostgreSQLTests(gocept.testdb.testing.TestCase,
         # The database is marked as a testing database by creating a table
         # called 'tmp_functest' in it:
         with self.assertNothingRaised():
-            self.execute(db.dsn, 'SELECT * from tmp_functest')
+            self.execute(db.dsn, sqlalchemy.text('SELECT * from tmp_functest'))
 
     def test_conveniences_properties_are_set(self):
         db = self.makeOne()
@@ -78,7 +79,7 @@ class PostgreSQLTests(gocept.testdb.testing.TestCase,
     def test_schema_gets_loaded(self):
         db = self.makeOne(schema_path=self.schema)
         with self.assertNothingRaised():
-            self.execute(db.dsn, 'SELECT * from foo')
+            self.execute(db.dsn, sqlalchemy.text('SELECT * from foo'))
 
     def test_name_of_database_can_be_specified(self):
         db = self.makeOne(db_name='mytestdb', create_db=False)
@@ -98,9 +99,10 @@ class PostgreSQLTests(gocept.testdb.testing.TestCase,
         db = self.makeOne(schema_path=self.schema, encoding='UTF8')
         encoding = self.execute(
             db.dsn,
-            """SELECT pg_catalog.pg_encoding_to_char(encoding) as encoding
+            sqlalchemy.text("""SELECT pg_catalog.pg_encoding_to_char(encoding) as encoding
                FROM pg_catalog.pg_database
-               WHERE datname = '%s'""" % db.dsn.split('/')[-1], fetch=True)
+               WHERE datname = '%s'""" % db.dsn.split('/')[-1]),
+            fetch=True)
         self.assertEqual([('UTF8',)], encoding)
 
     def test_db_template_creates_template_database(self):
@@ -122,7 +124,7 @@ class PostgreSQLTests(gocept.testdb.testing.TestCase,
         # Now with the template available, the schema is not used anymore to
         # create the database (it's re-created from the template). Let's modify
         # the template db before the next db creation run to demonstrate this:
-        self.execute(db.get_dsn(self.db_template), 'DROP TABLE foo;')
+        self.execute(db.get_dsn(self.db_template), sqlalchemy.text('DROP TABLE foo;'))
         db2 = self.makeOne(
             schema_path=self.schema, db_template=self.db_template)
         self.assertEqual(['tmp_functest'],

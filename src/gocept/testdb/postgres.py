@@ -55,7 +55,6 @@ class PostgreSQL(Database):
             schema_mtime = 0
         else:
             schema_mtime = int(os.path.getmtime(self.schema_path))
-
         if self.db_template in self.list_db_names():
             template_mtime = self._get_db_mtime(self.db_template)
             if self.force_template or schema_mtime != template_mtime:
@@ -102,21 +101,21 @@ class PostgreSQL(Database):
     def _get_db_mtime(self, database):
         dsn = self.get_dsn(database)
         conn = sqlalchemy.create_engine(dsn).connect()
-        result = next(conn.execute(
-            'SELECT schema_mtime FROM tmp_functest;').cursor)
-        conn.invalidate()
-        conn.close()
+        result = conn.execute(
+            sqlalchemy.text('SELECT schema_mtime FROM tmp_functest;')).first()
         if result:
             result = result[0]
         else:
             result = 0
+        conn.invalidate()
+        conn.close()
         return result
 
     def _set_db_mtime(self, database, mtime):
         dsn = self.get_dsn(database)
         conn = sqlalchemy.create_engine(dsn).connect()
-        conn.execute('INSERT INTO tmp_functest (schema_mtime) VALUES (%s);' %
-                     mtime)
+        conn.execute(sqlalchemy.text('INSERT INTO tmp_functest (schema_mtime) VALUES (%s);' %
+                     mtime))
         conn.invalidate()
         conn.close()
 

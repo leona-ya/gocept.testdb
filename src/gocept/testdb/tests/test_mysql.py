@@ -1,6 +1,6 @@
 import gocept.testdb.testing
 import gocept.testing.assertion
-
+import sqlalchemy
 
 class MySQLTests(gocept.testdb.testing.TestCase,
                  gocept.testing.assertion.String,
@@ -32,7 +32,7 @@ class MySQLTests(gocept.testdb.testing.TestCase,
 
     def test_db_without_special_table_counts_as_not_testing(self):
         db = self.makeOne(create_db=True)
-        self.execute(db.dsn, 'DROP TABLE tmp_functest')
+        self.execute(db.dsn, sqlalchemy.text('DROP TABLE tmp_functest'))
         self.assertFalse(db.is_testing)
 
     def test_takes_configuration_from_environment(self):
@@ -45,12 +45,12 @@ class MySQLTests(gocept.testdb.testing.TestCase,
         # The database is marked as a testing database by creating a table
         # called 'tmp_functest' in it:
         with self.assertNothingRaised():
-            self.execute(db.dsn, 'SELECT * from tmp_functest')
+            self.execute(db.dsn, sqlalchemy.text('SELECT * from tmp_functest'))
 
     def test_schema_gets_loaded(self):
         db = self.makeOne()
         with self.assertNothingRaised():
-            self.execute(db.dsn, 'SELECT * from foo')
+            self.execute(db.dsn, sqlalchemy.text('SELECT * from foo'))
 
     def test_name_of_database_can_be_specified(self):
         db = self.makeOne(db_name='mytestdb', create_db=False)
